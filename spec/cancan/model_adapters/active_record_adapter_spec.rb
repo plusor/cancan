@@ -6,6 +6,7 @@ if ENV["MODEL_ADAPTER"].nil? || ENV["MODEL_ADAPTER"] == "active_record"
   describe CanCan::ModelAdapters::ActiveRecordAdapter do
     with_model :category do
       table do |t|
+        t.string  "name"
         t.boolean "visible"
       end
       model do
@@ -20,10 +21,13 @@ if ENV["MODEL_ADAPTER"].nil? || ENV["MODEL_ADAPTER"] == "active_record"
         t.boolean "secret"
         t.integer "priority"
         t.integer "category_id"
+        t.integer "category1_id"
+        t.integer "category2_id"
         t.integer "user_id"
       end
       model do
         belongs_to :category
+        belongs_to :author, class_name: "User", foreign_key: :user_id
         has_many :comments
         belongs_to :user
       end
@@ -41,7 +45,9 @@ if ENV["MODEL_ADAPTER"].nil? || ENV["MODEL_ADAPTER"] == "active_record"
 
     with_model :user do
       table do |t|
-
+        t.integer :area_id
+        t.integer :group_id
+        t.string  :type
       end
       model do
         has_many :articles
@@ -144,6 +150,18 @@ if ENV["MODEL_ADAPTER"].nil? || ENV["MODEL_ADAPTER"] == "active_record"
       article1 = Article.create!(:secret => true, :category => category1)
       article2 = Article.create!(:secret => true, :category => category2)
       category1.articles.accessible_by(@ability).should == [article1]
+    end
+
+    it "should ..." do
+      class Author < User; end
+      @ability.can :read, Article, {author: {area_id: 1, group_id: 1}}
+      author1 = Author.create(area_id: 1)
+      author2 = Author.create(group_id: 1)
+      author3 = Author.create(area_id: 1, group_id: 1)
+      article1 = Article.create!(author: author1)
+      article2 = Article.create!(author: author2)
+      article3 = Article.create!(author: author3)
+      Article.accessible_by(@ability).should == [article3]
     end
 
     it "should raise an exception when trying to merge scope with other conditions" do
